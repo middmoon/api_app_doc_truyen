@@ -1,0 +1,19 @@
+try {
+      return new Promise((resolve, reject) => {
+        db.query(``, (error, results, fields) => {
+          if (error) {
+            reject({
+              status: "error",
+              error: error,
+            });
+          } else {
+            resolve(JSON.parse(JSON.stringify(result)));
+          }
+        });
+      });
+    } catch (error) {
+      return {
+        status: "error",
+        error: error,
+      };
+    }
