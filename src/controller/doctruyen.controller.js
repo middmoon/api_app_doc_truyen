@@ -5,7 +5,7 @@ const anhPath = (idTruyen, Ten, SoChuong, Anh) => {
 };
 // #endregion
 
-// #region select
+// #region query
 
 async function ThongTinChuong(idTruyen, SoChuong) {
   try {

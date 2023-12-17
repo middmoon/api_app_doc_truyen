@@ -141,6 +141,65 @@ async function theloai_truyen() {
   }
 }
 
+async function user() {
+  try {
+    return new Promise((resolve, reject) => {
+      db.query(
+        `SELECT 
+          *
+        FROM
+          user;`,
+        (error, results, fields) => {
+          if (error) {
+            reject({
+              status: "error",
+              error: error,
+            });
+          } else {
+            resolve(JSON.parse(JSON.stringify(results)));
+          }
+        }
+      );
+    });
+  } catch (error) {
+    return {
+      status: "error",
+      error: error,
+    };
+  }
+}
+
+async function user_yeuthich_truyen() {
+  try {
+    return new Promise((resolve, reject) => {
+      db.query(
+        `SELECT 
+          user_yeuthich_truyen.idTruyen,
+          COUNT(user_yeuthich_truyen.idUser) AS LuotYeuThich
+        FROM
+          user_yeuthich_truyen
+        GROUP BY 
+          user_yeuthich_truyen.idTruyen;`,
+        (error, results, fields) => {
+          if (error) {
+            reject({
+              status: "error",
+              error: error,
+            });
+          } else {
+            resolve(JSON.parse(JSON.stringify(results)));
+          }
+        }
+      );
+    });
+  } catch (error) {
+    return {
+      status: "error",
+      error: error,
+    };
+  }
+}
+
 //#endregion
 
 //#region // truyện theo id
@@ -289,7 +348,7 @@ async function DemSoChuongTheoId(id) {
         FROM
           chuongtruyen
         WHERE
-          chuongtruyen.idTruyen = 1;`,
+          chuongtruyen.idTruyen = ${id};`,
         (error, results, fields) => {
           if (error) {
             reject({
@@ -373,7 +432,7 @@ function TacGia(idTruyen, tacgia_Truyen, tacGia) {
     return TacGia;
   } catch (error) {
     return {
-      status: "error",
+      status: "error TacGia",
       error: error,
     };
   }
@@ -393,12 +452,22 @@ function TheLoai(idTruyen, theloai_Truyen, theLoai) {
     return TheLoai;
   } catch (error) {
     return {
-      status: "error",
+      status: "error TheLoai",
       error: error,
     };
   }
+}
 
-  return TheLoai;
+function LuotYeuThich(idTruyen, userYeuThich) {
+  try {
+    const ytt = userYeuThich.filter((ytt) => ytt.idTruyen === idTruyen);
+    return ytt[0].LuotYeuThich;
+  } catch (error) {
+    return {
+      status: "error LuotYeuThich",
+      error: error,
+    };
+  }
 }
 
 // #endregion
@@ -448,6 +517,8 @@ class TruyenController {
       const theloai_Truyen = await theloai_truyen();
       const theLoai = await theloai();
 
+      const userYeuThich = await user_yeuthich_truyen();
+
       const apiDanhSachTruyen = dsTruyen.map((item) => {
         const idTruyen = item.idTruyen;
 
@@ -457,6 +528,7 @@ class TruyenController {
           NamPhatHanh: item.NamPhatHanh,
           Anh: anhTruyenPath(item.idTruyen, item.Ten, item.Anh),
           MoTa: item.MoTa,
+          LuotYeuThich: LuotYeuThich(idTruyen, userYeuThich),
           TacGia: TacGia(idTruyen, tacgia_Truyen, tacGia),
           TheLoai: TheLoai(idTruyen, theloai_Truyen, theLoai),
         };

@@ -1,0 +1,15 @@
+GET http://localhost:3000
+
+###
+
+POST http://localhost:3000/login
+Content-Type: application/json
+
+{
+  "tendangnhap": "test1",
+  "matkhau": "123"
+}
+
+###
+GET http://localhost:3000/user/liked
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0ZW5kYW5nbmhhcCI6InRlc3QxIiwibWF0a2hhdSI6IjEyMyIsImlhdCI6MTcwMjcyMjk1MiwiZXhwIjoxNzAyNzIzNDUyfQ.mvUb_Bj91GG23Z21OOwIalgPY3srBVKSqOpjUM7I8C8
