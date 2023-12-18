@@ -2,6 +2,7 @@ const express = require("express");
 const morgan = require("morgan");
 const hbs = require("express-handlebars");
 const path = require("path");
+const cookieParser = require("cookie-parser");
 
 const app = express();
 
@@ -17,6 +18,8 @@ app.use(
 );
 
 app.use(express.json());
+
+app.use(cookieParser());
 
 // init views
 app.engine("handlebars", hbs.engine());

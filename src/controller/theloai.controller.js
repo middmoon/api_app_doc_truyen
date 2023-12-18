@@ -45,6 +45,13 @@ async function truyentheloai2(TenTheLoai) {
           DATE_FORMAT(truyen.NamPhatHanh, '%d-%m-%Y') AS NamPhatHanh,
           truyen.Anh AS AnhTruyen,
           truyen.Mota AS MotaTruyen,
+          (SELECT 
+            COUNT(user_yeuthich_truyen.idUser)
+              FROM
+            user_yeuthich_truyen
+              WHERE
+            user_yeuthich_truyen.idTruyen = truyen.idTruyen
+              GROUP BY user_yeuthich_truyen.idTruyen) AS LuotYeuThich,
           GROUP_CONCAT(
               DISTINCT JSON_OBJECT(
                   'idTacGia', tacgia.idTacGia,
@@ -244,7 +251,7 @@ class TheLoaiController {
           NamPhatHanh: item.NamPhatHanh,
           MoTa: item.MotaTruyen,
           Anh: anhTruyenPath(item.idTruyen, item.TenTruyen, item.AnhTruyen),
-
+          LuotYeuThich: item.LuotYeuThich,
           TacGia: JSON.parse(item.TacGia).map((item2) => {
             return {
               idTacGia: item2.idTacGia,
@@ -268,7 +275,7 @@ class TheLoaiController {
     } catch (error) {
       res.json({
         status: "error",
-        error: error,
+        error: error.message,
       });
     }
   }

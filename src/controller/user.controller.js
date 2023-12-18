@@ -4,8 +4,10 @@ require("dotenv").config();
 const db = require("../configs/mysql.config");
 const path = require("path");
 const fs = require("fs");
+const cookie = require("cookie-parser");
 
 const jwt = require("jsonwebtoken");
+const { ppid } = require("process");
 
 const userVersion = {
   user: "user",
@@ -143,20 +145,20 @@ const TruyenYeuThich = async (tendangnhap) => {
               WHERE
                   user_yeuthich_truyen.idTruyen = truyen.idTruyen
               GROUP BY user_yeuthich_truyen.idTruyen) AS LuotYeuThich,
-          GROUP_CONCAT(DISTINCT JSON_OBJECT('idTacGia',
-                      tacgia.idTacGia,
-                      'Ten',
-                      tacgia.Ten,
-                      'Anh',
-                      tacgia.Anh,
-                      'MoTa',
-                      tacgia.MoTa,
-                      'NamSinh',
-                      tacgia.NamSinh)) AS TacGia,
-          GROUP_CONCAT(DISTINCT JSON_OBJECT('idTheLoai',
-                      theloai.idTheLoai,
-                      'TenTheLoai',
-                      theloai.TenTheLoai)) AS TheLoai
+          JSON_ARRAYAGG(JSON_OBJECT('idTacGia',
+                          tacgia.idTacGia,
+                          'Ten',
+                          tacgia.Ten,
+                          'Anh',
+                          tacgia.Anh,
+                          'MoTa',
+                          tacgia.MoTa,
+                          'NamSinh',
+                          tacgia.NamSinh)) AS TacGia,
+          JSON_ARRAYAGG(JSON_OBJECT('idTheLoai',
+                          theloai.idTheLoai,
+                          'TenTheLoai',
+                          theloai.TenTheLoai)) AS TheLoai
         FROM
             user
                 INNER JOIN
@@ -172,7 +174,7 @@ const TruyenYeuThich = async (tendangnhap) => {
                 LEFT JOIN
             theloai ON theloai.idTheLoai = theloai_truyen.idTheLoai
         WHERE
-            user.TenDangNhap = '${tendangnhap}'
+            user.TenDangNhap = "${tendangnhap}"
         GROUP BY truyen.idTruyen;`,
         (error, results, fields) => {
           if (error) {
@@ -219,10 +221,20 @@ class UserController {
     try {
       const userExists = await checkUser(data);
       const passwordCorrect = await checkPassword(data);
+
       if (userExists.status === "success" && passwordCorrect.status === "success") {
         const accressToken = jwt.sign(data, process.env.ACCESS_TOKEN_SECRET, {
-          expiresIn: "500s",
+          expiresIn: "2h",
         });
+
+        // jwt cookie
+
+        res.cookie("token", accressToken, {
+          httpOnly: true,
+        });
+
+        // return res.redirect("/");
+
         res.send({
           status: "success",
           message: "Xac minh thanh cong",
@@ -253,6 +265,7 @@ class UserController {
         Ten: item.TenTruyen,
         NamPhatHanh: item.NamPhatHanh,
         MoTa: item.MotaTruyen,
+        LuotYeuThich: item.LuotYeuThich,
         Anh: anhTruyenPath(item.idTruyen, item.TenTruyen, item.AnhTruyen),
 
         TacGia: JSON.parse(item.TacGia).map((item2) => {
@@ -277,7 +290,7 @@ class UserController {
     console.log(`truyen yeu thich cua user: ${userData.tendangnhap}`);
     res.json({
       status: "success",
-      data: userData,
+      userData: userData,
       danhsach: result,
     });
   }
