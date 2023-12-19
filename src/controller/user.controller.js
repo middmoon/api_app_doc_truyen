@@ -278,7 +278,7 @@ class UserController {
         idTruyen: item.idTruyen,
         Ten: item.Ten,
         NamPhatHanh: item.NamPhatHanh,
-        MoTa: item.MotaTruyen,
+        MoTa: item.Mota,
         LuotYeuThich: item.LuotYeuThich,
         Anh: anhTruyenPath(item.idTruyen, item.Ten, item.Anh),
 
