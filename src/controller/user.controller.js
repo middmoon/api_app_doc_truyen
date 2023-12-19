@@ -134,10 +134,10 @@ const TruyenYeuThich = async (tendangnhap) => {
       db.query(
         `SELECT 
           truyen.idTruyen,
-          truyen.Ten AS TenTruyen,
+          truyen.Ten,
           DATE_FORMAT(truyen.NamPhatHanh, '%d-%m-%Y') AS NamPhatHanh,
-          truyen.Anh AS AnhTruyen,
-          truyen.Mota AS MotaTruyen,
+          truyen.Anh,
+          truyen.Mota,
           (SELECT 
                   COUNT(user_yeuthich_truyen.idUser)
               FROM
