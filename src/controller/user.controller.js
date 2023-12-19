@@ -134,10 +134,10 @@ const TruyenYeuThich = async (tendangnhap) => {
       db.query(
         `SELECT 
           truyen.idTruyen,
-          truyen.Ten,
-          truyen.Anh,
-          truyen.NamPhatHanh,
-          truyen.MoTa,
+          truyen.Ten AS TenTruyen,
+          DATE_FORMAT(truyen.NamPhatHanh, '%d-%m-%Y') AS NamPhatHanh,
+          truyen.Anh AS AnhTruyen,
+          truyen.Mota AS MotaTruyen,
           (SELECT 
                   COUNT(user_yeuthich_truyen.idUser)
               FROM
@@ -145,34 +145,48 @@ const TruyenYeuThich = async (tendangnhap) => {
               WHERE
                   user_yeuthich_truyen.idTruyen = truyen.idTruyen
               GROUP BY user_yeuthich_truyen.idTruyen) AS LuotYeuThich,
-          JSON_ARRAYAGG(JSON_OBJECT('idTacGia',
-                          tacgia.idTacGia,
-                          'Ten',
-                          tacgia.Ten,
-                          'Anh',
-                          tacgia.Anh,
-                          'MoTa',
-                          tacgia.MoTa,
-                          'NamSinh',
-                          tacgia.NamSinh)) AS TacGia,
-          JSON_ARRAYAGG(JSON_OBJECT('idTheLoai',
-                          theloai.idTheLoai,
-                          'TenTheLoai',
-                          theloai.TenTheLoai)) AS TheLoai
+          (SELECT 
+                  JSON_ARRAYAGG(JSON_OBJECT('idTacGia',
+                                      tacgia.idTacGia,
+                                      'Ten',
+                                      tacgia.Ten,
+                                      'Anh',
+                                      tacgia.Anh,
+                                      'MoTa',
+                                      tacgia.MoTa,
+                                      'NamSinh',
+                                      tacgia.NamSinh))
+              FROM
+                  tacgia
+                      INNER JOIN
+                  tacgia_truyen ON tacgia_truyen.idTacGia = tacgia.idTacGia
+              WHERE
+                  truyen.idTruyen = tacgia_truyen.idTruyen) AS TacGia,
+          (SELECT 
+                  JSON_ARRAYAGG(JSON_OBJECT('idTheLoai',
+                                      theloai.idTheLoai,
+                                      'TenTheLoai',
+                                      theloai.TenTheLoai))
+              FROM
+                  theloai
+                      INNER JOIN
+                  theloai_truyen ON theloai_truyen.idTheLoai = theloai.idTheLoai
+              WHERE
+                  truyen.idTruyen = theloai_truyen.idTruyen) AS TheLoai
         FROM
             user
                 INNER JOIN
             user_yeuthich_truyen ON user.idUser = user_yeuthich_truyen.idUser
                 INNER JOIN
             truyen ON truyen.idTruyen = user_yeuthich_truyen.idTruyen
-                LEFT JOIN
-            tacgia_truyen ON truyen.idTruyen = tacgia_truyen.idTruyen
-                LEFT JOIN
-            tacgia ON tacgia.idTacGia = tacgia_truyen.idTacGia
-                LEFT JOIN
+                INNER JOIN
             theloai_truyen ON truyen.idTruyen = theloai_truyen.idTruyen
-                LEFT JOIN
+                INNER JOIN
             theloai ON theloai.idTheLoai = theloai_truyen.idTheLoai
+                INNER JOIN
+            tacgia_truyen ON truyen.idTruyen = tacgia_truyen.idTruyen
+                INNER JOIN
+            tacgia ON tacgia.idTacGia = tacgia_truyen.idTacGia
         WHERE
             user.TenDangNhap = "${tendangnhap}"
         GROUP BY truyen.idTruyen;`,
@@ -262,11 +276,11 @@ class UserController {
     const result = truyenYeuThich.map((item) => {
       return {
         idTruyen: item.idTruyen,
-        Ten: item.TenTruyen,
+        Ten: item.Ten,
         NamPhatHanh: item.NamPhatHanh,
         MoTa: item.MotaTruyen,
         LuotYeuThich: item.LuotYeuThich,
-        Anh: anhTruyenPath(item.idTruyen, item.TenTruyen, item.AnhTruyen),
+        Anh: anhTruyenPath(item.idTruyen, item.Ten, item.Anh),
 
         TacGia: JSON.parse(item.TacGia).map((item2) => {
           return {
