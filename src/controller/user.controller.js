@@ -7,7 +7,6 @@ const fs = require("fs");
 const cookie = require("cookie-parser");
 
 const jwt = require("jsonwebtoken");
-const { ppid } = require("process");
 
 const userVersion = {
   user: "user",
@@ -15,7 +14,17 @@ const userVersion = {
   user_v2_demo: "user_v2_demo",
 };
 
-const userPath = path.join(__dirname, "..", "public/user");
+function checkUserImgPath(tendangnhap, anh) {
+  const userPath = path.join(__dirname, "..", "public/user/", tendangnhap, anh);
+
+  const defaultImagePath = `/user/user.png`;
+
+  if (fs.existsSync(userPath)) {
+    return `/user/${tendangnhap}/${anh}`;
+  } else {
+    return defaultImagePath;
+  }
+}
 
 const anhTruyenPath = (id, ten, anh) => {
   return `/truyen/${id} - ${ten}/${anh}`;
@@ -127,6 +136,42 @@ const createUser_sys = async (tendangnhap) => {
 // #endregion
 
 // #region query
+async function UserDetails(tendangnhap) {
+  try {
+    return new Promise((resolve, reject) => {
+      db.query(`SELECT * FROM user WHERE user.TenDangNhap = "${tendangnhap}";`, (error, results, fields) => {
+        if (error) {
+          reject({
+            status: "error",
+            error: error,
+          });
+        } else {
+          if (results.length > 0) {
+            const user = results[0];
+            resolve({
+              idUser: user.idUser,
+              Ten: user.Ten,
+              Email: user.Email,
+              TenDangNhap: user.TenDangNhap,
+              MatKhau: user.MatKhau,
+              Anh: checkUserImgPath(user.TenDangNhap, user.Anh),
+            });
+          } else {
+            reject({
+              status: "error",
+              error: "User not found",
+            });
+          }
+        }
+      });
+    });
+  } catch (error) {
+    return {
+      status: "error",
+      error: error,
+    };
+  }
+}
 
 const TruyenYeuThich = async (tendangnhap) => {
   try {
@@ -210,6 +255,88 @@ const TruyenYeuThich = async (tendangnhap) => {
   }
 };
 
+async function LikeTryuen(idUser, idTruyen) {
+  try {
+    return new Promise((resolve, reject) => {
+      db.query(`INSERT INTO user_yeuthich_truyen(idUser,idTruyen) VALUE (${idUser}, ${idTruyen})`, (error, results, fields) => {
+        if (error) {
+          reject({
+            status: "error",
+            error: error,
+          });
+        } else {
+          resolve(JSON.parse(JSON.stringify(results)));
+        }
+      });
+    });
+  } catch (error) {
+    return {
+      status: "error",
+      error: error,
+    };
+  }
+}
+
+async function UnLikeTryuen(idUser, idTruyen) {
+  try {
+    return new Promise((resolve, reject) => {
+      db.query(
+        `DELETE FROM user_yeuthich_truyen WHERE user_yeuthich_truyen.idUser = ${idUser} AND  user_yeuthich_truyen.idTruyen = ${idTruyen};`,
+        (error, results, fields) => {
+          if (error) {
+            reject({
+              status: "error",
+              error: error,
+            });
+          } else {
+            resolve(JSON.parse(JSON.stringify(results)));
+          }
+        }
+      );
+    });
+  } catch (error) {
+    return {
+      status: "error",
+      error: error,
+    };
+  }
+}
+
+async function CheckLikeTruyen(idUser, idTruyen) {
+  try {
+    return new Promise((resolve, reject) => {
+      db.query(
+        `SELECT * FROM user_yeuthich_truyen WHERE user_yeuthich_truyen.idUser = ${idUser} AND  user_yeuthich_truyen.idTruyen = ${idTruyen};`,
+        (error, results, fields) => {
+          if (error) {
+            reject({
+              status: "error",
+              error: error,
+            });
+          } else {
+            if (results.length > 0) {
+              resolve({
+                liked: true,
+                data: JSON.parse(JSON.stringify(results)),
+              });
+            } else {
+              resolve({
+                liked: false,
+                data: null,
+              });
+            }
+          }
+        }
+      );
+    });
+  } catch (error) {
+    return {
+      status: "error",
+      error: error,
+    };
+  }
+}
+
 // #endregion
 
 class UserController {
@@ -220,7 +347,7 @@ class UserController {
       const tendangnhap = await createUser_db(body);
       createUser_sys(tendangnhap);
       res.send({
-        tendangnhap: tendangnhap,
+        tendangnhap: await User(tendangnhap),
       });
     } catch (error) {
       res.send({
@@ -237,24 +364,26 @@ class UserController {
       const userExists = await checkUser(data);
       const passwordCorrect = await checkPassword(data);
 
+      const userDetails = await UserDetails(data.tendangnhap);
+
       if (userExists.status === "success" && passwordCorrect.status === "success") {
-        const accressToken = jwt.sign(data, process.env.ACCESS_TOKEN_SECRET, {
+        const accessToken = jwt.sign(userDetails, process.env.ACCESS_TOKEN_SECRET, {
           expiresIn: "2h",
         });
 
         // jwt cookie
 
-        res.cookie("token", accressToken, {
-          httpOnly: true,
-        });
+        // res.cookie("token", accressToken, {
+        //   httpOnly: true,
+        // });
 
         // return res.redirect("/");
 
         res.send({
           status: "success",
           message: "Xac minh thanh cong",
-          data: data,
-          token: accressToken,
+          userData: userDetails,
+          token: accessToken,
         });
       } else {
         res.send({
@@ -271,8 +400,9 @@ class UserController {
   }
 
   async liked(req, res) {
-    const userData = req.user;
-    const truyenYeuThich = await TruyenYeuThich(userData.tendangnhap);
+    const user = req.user;
+
+    const truyenYeuThich = await TruyenYeuThich(user.TenDangNhap);
 
     const result = truyenYeuThich.map((item) => {
       return {
@@ -302,20 +432,46 @@ class UserController {
       };
     });
 
-    console.log(`truyen yeu thich cua user: ${userData.tendangnhap}`);
+    console.log(`truyen yeu thich cua user: ${user.tendangnhap}`);
     res.json({
       status: "success",
-      userData: userData,
+      userData: user,
       danhsach: result,
     });
   }
 
-  async yeuthichtruyen(req, res) {
+  async like(req, res) {
     const data = req.body;
-    console.log(data);
+
+    res.json({
+      status: "success",
+      YeuThich: await LikeTryuen(data.idUser, data.idTruyen),
+      danhsach: result,
+    });
   }
 
-  async boyeuthichtruyen() {}
+  async unlike(req, res) {
+    const data = req.body;
+
+    res.json({
+      status: "success",
+      BoYeuThich: await UnLikeTryuen(data.idUser, data.idTruyen),
+      danhsach: result,
+    });
+  }
+
+  async checkLike(req, res) {
+    const idTruyen = req.params.idTruyen;
+    const user = req.user;
+
+    const likeResult = await CheckLikeTruyen(user.idUser, idTruyen);
+    res.json({
+      status: "success",
+      idTruyen: idTruyen,
+      userData: user,
+      likeResult: likeResult,
+    });
+  }
 }
 
 module.exports = new UserController();
