@@ -30,7 +30,7 @@ userRouter.get("/liked", authenToken, userController.liked);
 
 userRouter.get("/check_like/:idTruyen", authenToken, userController.checkLike);
 
-userRouter.post("/like/:idUser/:idTruyen", authenToken, userController.like);
-userRouter.delete("/unlike/:idUser/:idTruyen"), authenToken, userController.unlike;
+userRouter.post("/like/:idTruyen", authenToken, userController.like);
+userRouter.delete("/unlike/:idTruyen"), authenToken, userController.unlike;
 
 module.exports = userRouter;

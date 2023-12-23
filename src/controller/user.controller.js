@@ -255,7 +255,7 @@ const TruyenYeuThich = async (tendangnhap) => {
   }
 };
 
-async function LikeTryuen(idUser, idTruyen) {
+async function LikeTruyen(idUser, idTruyen) {
   try {
     return new Promise((resolve, reject) => {
       db.query(`INSERT INTO user_yeuthich_truyen(idUser,idTruyen) VALUE (${idUser}, ${idTruyen})`, (error, results, fields) => {
@@ -277,7 +277,7 @@ async function LikeTryuen(idUser, idTruyen) {
   }
 }
 
-async function UnLikeTryuen(idUser, idTruyen) {
+async function UnLikeTruyen(idUser, idTruyen) {
   try {
     return new Promise((resolve, reject) => {
       db.query(
@@ -441,22 +441,22 @@ class UserController {
   }
 
   async like(req, res) {
-    const data = req.body;
+    const user = req.user;
+    const idTruyen = req.params.idTruyen;
 
     res.json({
       status: "success",
-      YeuThich: await LikeTryuen(data.idUser, data.idTruyen),
-      danhsach: result,
+      YeuThich: await LikeTruyen(user.idUser, idTruyen),
     });
   }
 
   async unlike(req, res) {
-    const data = req.body;
+    const user = req.user;
+    const idTruyen = req.params.idTruyen;
 
     res.json({
       status: "success",
-      BoYeuThich: await UnLikeTryuen(data.idUser, data.idTruyen),
-      danhsach: result,
+      BoYeuThich: await UnLikeTruyen(user.idUser, idTruyen),
     });
   }
 
