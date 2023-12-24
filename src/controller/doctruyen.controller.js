@@ -71,6 +71,50 @@ async function AnhCuaMotChuong(idTruyen, SoChuong) {
     };
   }
 }
+
+async function DanhSachChuongTheoId(id) {
+  try {
+    return new Promise((resolve, reject) => {
+      db.query(
+        `SELECT 
+          chuongtruyen.idChuongTruyen, 
+          chuongtruyen.SoChuong,
+          COALESCE(anh_count.PAGE, 0) AS PAGE
+        FROM
+          chuongtruyen
+          LEFT JOIN (
+        SELECT 
+          idTruyen,
+          SoChuong,
+          COUNT(Anh) AS PAGE
+        FROM
+          anhchuongtruyen
+        WHERE
+          idTruyen = ${id}
+        GROUP BY
+          idTruyen, SoChuong) AS anh_count ON chuongtruyen.idTruyen = anh_count.idTruyen AND chuongtruyen.SoChuong = anh_count.SoChuong
+        WHERE
+          chuongtruyen.idTruyen = ${id}`,
+        (error, results, fields) => {
+          if (error) {
+            reject({
+              status: "error",
+              error: error,
+            });
+          } else {
+            resolve(JSON.parse(JSON.stringify(results)));
+          }
+        }
+      );
+    });
+  } catch (error) {
+    return {
+      status: "error",
+      error: error,
+    };
+  }
+}
+
 // #endregion
 
 class DocTruyenController {
@@ -89,6 +133,8 @@ class DocTruyenController {
       const thongtin = await ThongTinChuong(idTruyen, SoChuong);
       const anhchuong = await AnhCuaMotChuong(idTruyen, SoChuong);
 
+      const danhsachchuong = await DanhSachChuongTheoId(idTruyen);
+
       const boanh = anhchuong.map((anh) => {
         return {
           STT: anh.STT,
@@ -100,6 +146,7 @@ class DocTruyenController {
         Ten: thongtin[0].Ten,
         SoChuong: thongtin[0].SoChuong,
         BoAnh: boanh,
+        DanhSachChuong: danhsachchuong,
       };
 
       res.json(result);
