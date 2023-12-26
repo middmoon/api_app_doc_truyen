@@ -14,12 +14,14 @@ const userVersion = {
   user_v2_demo: "user_v2_demo",
 };
 
+const userPath = path.join(__dirname, "..", "public/user");
+
 function checkUserImgPath(tendangnhap, anh) {
-  const userPath = path.join(__dirname, "..", "public/user/", tendangnhap, anh);
+  const userImgPath = path.join(__dirname, "..", "public/user/", tendangnhap, anh);
 
   const defaultImagePath = `/user/user.png`;
 
-  if (fs.existsSync(userPath)) {
+  if (fs.existsSync(userImgPath)) {
     return `/user/${tendangnhap}/${anh}`;
   } else {
     return defaultImagePath;
@@ -110,7 +112,7 @@ const createUser_db = (body) => {
           if (error) {
             reject({
               status: "error",
-              message: error,
+              message: error.message,
             });
           } else {
             resolve(body.tendangnhap);
@@ -120,7 +122,7 @@ const createUser_db = (body) => {
     } catch (error) {
       reject({
         status: "error",
-        message: error,
+        message: error.message,
       });
     }
   });
@@ -168,7 +170,7 @@ async function UserDetails(tendangnhap) {
   } catch (error) {
     return {
       status: "error",
-      error: error,
+      error: error.message,
     };
   }
 }
@@ -347,7 +349,8 @@ class UserController {
       const tendangnhap = await createUser_db(body);
       createUser_sys(tendangnhap);
       res.send({
-        tendangnhap: await User(tendangnhap),
+        status: "success",
+        data: await UserDetails(tendangnhap),
       });
     } catch (error) {
       res.send({
