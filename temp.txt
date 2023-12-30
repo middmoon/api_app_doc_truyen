@@ -22,6 +22,5 @@ công nghệ sử dụng:
 nodejs: run time JS - api server
 mysql: kết nối db
 express: mở server, định tuyến
-multer: upload file  
 VS code: viết server nodejs lam api
 Android studio: Làm app
