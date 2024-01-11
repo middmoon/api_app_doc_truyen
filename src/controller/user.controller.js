@@ -344,7 +344,7 @@ async function CheckLikeTruyen(idUser, idTruyen) {
 class UserController {
   async createUser(req, res) {
     const body = req.body;
-    console.log(body);
+    +console.log(body);
     try {
       const tendangnhap = await createUser_db(body);
       createUser_sys(tendangnhap);

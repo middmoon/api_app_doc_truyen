@@ -2,6 +2,16 @@ GET http://localhost:3000
 
 ###
 
+POST http://localhost:3000/register
+Content-Type: application/json
+
+{
+  "email": "test1@gmail.com",
+  "hoten": "nguyen thanh",
+  "tendangnhap": "test1",
+  "matkhau": "123"
+}
+
 POST http://localhost:3000/login
 Content-Type: application/json
 
@@ -9,6 +19,7 @@ Content-Type: application/json
   "tendangnhap": "test1",
   "matkhau": "123"
 }
+
 
 ###
 GET http://localhost:3000/user/liked
